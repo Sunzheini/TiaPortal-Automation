@@ -16,6 +16,8 @@ namespace TiaAutomation.Core.Contracts
 
         string ClientConnect();
 
+        string TempMethodOpeness();
+
         string BuildSolution();
 
         string SetTargetNetId(string amsNetId, string defaultAmsNetId);

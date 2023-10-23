@@ -18,6 +18,8 @@ namespace TiaAutomation.Core.Contracts
 
         string Start();
 
+        string TempMethod();
+
         string BuildSolution();
 
         string SetTargetNetId(string amsNetId);

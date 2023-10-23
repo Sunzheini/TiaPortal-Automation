@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TiaAutomation"
         FontSize="14" FontFamily="Segoe UI"
-        Title="Tia Controller" Height="750" Width="370">
+        Title="Tia Controller" Height="780" Width="370">
     <Grid>
         <Grid.ColumnDefinitions>
             <!--to make an artificial margin-->
@@ -28,15 +28,6 @@
             <RowDefinition Height="30"/>
             <RowDefinition Height="10"/>
 
-            <RowDefinition Height="5"/>
-            <RowDefinition Height="30"/>
-            <RowDefinition Height="30"/>
-            <RowDefinition Height="10"/>
-
-            <RowDefinition Height="10"/>
-            <RowDefinition Height="30"/>
-            <RowDefinition Height="10"/>
-
             <RowDefinition Height="10"/>
             <RowDefinition Height="30"/>
             <RowDefinition Height="10"/>
@@ -54,6 +45,19 @@
             <RowDefinition Height="30"/>
             <RowDefinition Height="10"/>
 
+            <RowDefinition Height="5"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="10"/>
+
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="10"/>
+
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="10"/>
+
             <RowDefinition Height="30"/>
 
             <RowDefinition Height="10"/>
@@ -61,7 +65,7 @@
             <RowDefinition Height="10"/>
 
             <RowDefinition Height="10"/>
-            <RowDefinition Height="90"/>
+            <RowDefinition Height="90" />
             <RowDefinition Height="10"/>
 
             <!--to make an artificial margin-->
@@ -81,60 +85,65 @@
                 Content="Start" Click="button1_Click"
          />
 
+        <!--TempButtonUntilSecurityIssueIsFixed-->
+        <Button x:Name="tempButton" Grid.Column="1" Grid.Row="7" 
+                Content="(Temp) Open Project" Click="tempButton_Click"
+         />
+
         <!--Button2-->
-        <Button x:Name="button2" Grid.Column="1" Grid.Row="7" 
+        <Button x:Name="button2" Grid.Column="1" Grid.Row="10" 
                 Content="Build Solution" Click="button2_Click"
          />
 
         <!--Input1-->
-        <TextBox x:Name="input1" Grid.Column="1" Grid.Row="10" 
+        <TextBox x:Name="input1" Grid.Column="1" Grid.Row="13" 
                  Height="20"
          />
 
         <!--Button3-->
-        <Button x:Name="button3" Grid.Column="1" Grid.Row="11" 
+        <Button x:Name="button3" Grid.Column="1" Grid.Row="14" 
                 Content="Set target NetId" Click="button3_Click"
          />
 
         <!--Button4-->
-        <Button x:Name="button4" Grid.Column="1" Grid.Row="14" 
+        <Button x:Name="button4" Grid.Column="1" Grid.Row="17" 
                 Content="Activate Configuration" Click="button4_Click"
          />
 
         <!--Button5-->
-        <Button x:Name="button5" Grid.Column="1" Grid.Row="17" 
+        <Button x:Name="button5" Grid.Column="1" Grid.Row="20" 
                 Content="Start/Restart" Click="button5_Click"
          />
 
         <!--Input2-->
-        <TextBox x:Name="input2" Grid.Column="1" Grid.Row="20" 
+        <TextBox x:Name="input2" Grid.Column="1" Grid.Row="23" 
                  Height="20"
          />
 
         <!--Button6-->
-        <Button x:Name="button6" Grid.Column="1" Grid.Row="21" 
+        <Button x:Name="button6" Grid.Column="1" Grid.Row="24" 
                 Content="Read int from PLC" Click="button6_Click"
          />
 
         <!--Button7-->
-        <Button x:Name="button7" Grid.Column="1" Grid.Row="24" 
+        <Button x:Name="button7" Grid.Column="1" Grid.Row="27" 
                 Content="Start/Stop PLC" Click="button7_Click"
          />
 
         <!--Button8-->
-        <Button x:Name="button8" Grid.Column="1" Grid.Row="27" 
+        <Button x:Name="button8" Grid.Column="1" Grid.Row="30" 
                 Content="Enable/Disable" Click="button8_Click"
          />
 
         <!--Button9-->
-        <Button x:Name="button9" Grid.Column="1" Grid.Row="31" 
+        <Button x:Name="button9" Grid.Column="1" Grid.Row="34" 
                 Content="Close Tia Portal" Click="button9_Click"
          />
 
         <!--Label (margin: left, right, top, bottom)-->
-        <TextBlock x:Name="label1" Grid.Column="1" Grid.Row="34" 
+        <TextBlock x:Name="label1" Grid.Column="0" Grid.Row="37" 
                 Text="Status Label" TextAlignment="Center" VerticalAlignment="Center" 
-				FontSize="10" Height="70" 
+				FontSize="10" Height="70"  Grid.ColumnSpan="3" Margin="10,0,-85,0"
          />
     </Grid>
 </Window>

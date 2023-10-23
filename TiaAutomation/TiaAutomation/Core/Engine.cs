@@ -90,6 +90,16 @@ namespace TiaAutomation.Core
             return _returnStringStart;
         }
 
+        public string TempMethod()
+        {
+            // method #1
+            _resultStringFromMethodExecution = tiaOpennessController.TempMethodOpeness();
+            if (_resultStringFromMethodExecution != _returnStringWhenSuccess) return _resultStringFromMethodExecution;
+
+            // end
+            return _returnStringBuild;
+        }
+
         public string BuildSolution()
         {
             // method #1

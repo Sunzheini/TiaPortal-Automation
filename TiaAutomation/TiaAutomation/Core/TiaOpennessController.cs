@@ -1,8 +1,13 @@
 ﻿using Microsoft.Win32;
 using Siemens.Engineering;
+using Siemens.Engineering.Compiler;
+using Siemens.Engineering.Download;
 using Siemens.Engineering.HW;
+using Siemens.Engineering.HW.Features;
+using Siemens.Engineering.SW;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -28,16 +33,26 @@ namespace TiaAutomation.Core
         private string _returnStringWhenSuccess = "Success";
 
         // -------------------
+        // Tia Openess
+        // -------------------
 
-        // Class1 newTIA = null;
+        public static TiaPortal instTIA;   
+        public bool openedWithInterface;
+        public static Project currentProject;   
+        public static ProjectComposition projectsObject;
 
-        public static TiaPortal instTIA;
-        public static Project projectTia;
-        public static ProjectComposition projects;
+        public string locationOfTiaExe = "C:\\Program Files\\Siemens\\Automation\\Portal V18\\Bin\\Siemens.Automation.Portal.exe";
+        public string projectPath = "C:\\Appl\\Projects\\Siemens\\FBW_Siemens_PLC_OPC_UA_V18\\FBW_Siemens_PLC_OPC_UA_V18.ap18";
+        public static FileInfo projectFileInfoPath = null;
 
-        public string projectPath = "C:\\Appl\\Projects\\Siemens\\Project1\\Project1.ap18";
-        public static FileInfo targetDir = null;
-        public static Device plcDevice;
+        public string projectDirectoryPath = "C:\\Appl\\Projects\\Siemens\\FBW_Siemens_PLC_OPC_UA_V18";
+        public static DirectoryInfo projectDirectoryInfoPath = null;
+
+        public static DeviceComposition projectDevicesObject;
+        public static Device device;
+        public static DeviceItem deviceItem;
+
+        // -------------------
 
         public TiaOpennessController(string productId)
         {
@@ -81,10 +96,9 @@ namespace TiaAutomation.Core
             //);
 
             instTIA = new TiaPortal(TiaPortalMode.WithUserInterface);
+            openedWithInterface = true;
 
-            return "Test";
-
-            //return _returnStringWhenSuccess;
+            return _returnStringWhenSuccess;
         }
 
         public void SetWhiteList(string ApplicationName, string ApplicationStartUpPath)
@@ -135,8 +149,13 @@ namespace TiaAutomation.Core
             //    return $"Error in OpenSolution: {e}";
             //}
 
-            //targetDir = new FileInfo(projectPath);
-            //projectTia = instTIA.Projects.Open(targetDir);
+            // -------------------
+
+            projectDirectoryInfoPath = new DirectoryInfo(projectDirectoryPath);
+
+            projectFileInfoPath = new FileInfo(projectPath);
+            projectsObject = instTIA.Projects;
+            currentProject = projectsObject.Open(projectFileInfoPath);
 
             return _returnStringWhenSuccess;
         }
@@ -152,11 +171,44 @@ namespace TiaAutomation.Core
             //{
             //    return $"Error in CreateITcSysManager: {e}";
             //}
+
+            // -------------------
+            projectDevicesObject = currentProject.Devices;
+
+            //string result = string.Empty;
+            //foreach(Device device in projectDevicesObject)
+            //{
+            //    result += device.Name + "\n";
+            //}
+            //return result;
+
+            device = projectDevicesObject[0];
+
+            DeviceItemComposition currentDeviceItemAggregation = device.DeviceItems;
+
+            // [0] is Rail_0, [1] is PLC_1
+            deviceItem = currentDeviceItemAggregation[1];
+
+            // return $"Device name: {device.Name}";
+            // return $"Device name: {deviceItem.Name}";   // PLC_1
+
+            // -------------------
+
             return _returnStringWhenSuccess;
         }
 
         public string ClientConnect()
         {
+            return _returnStringWhenSuccess;
+        }
+
+        // Move to open solution after security problem is solved
+        public string TempMethodOpeness()
+        {
+            projectFileInfoPath = new FileInfo(projectPath);
+            projectsObject = instTIA.Projects;
+            currentProject = projectsObject.Open(projectFileInfoPath);
+
             return _returnStringWhenSuccess;
         }
 
@@ -171,13 +223,25 @@ namespace TiaAutomation.Core
             //    return $"Error in BuildSolution: {e}";
             //}
 
-            targetDir = new FileInfo(projectPath);
-            // projectTia = instTIA.Projects.Open(targetDir);
+            // -------------------
 
-            projects = instTIA.Projects;
-            projectTia = projects.Open(targetDir);
+            // container = ((IEngineeringServiceProvider)device).GetService<SoftwareContainer>();
+            // softwareBase = container.Software;
 
-            return _returnStringWhenSuccess;
+            // DeviceItem deviceItemToGetService = deviceItem as DeviceItem;
+            // softwareContainer = deviceItemToGetService.GetService<SoftwareContainer>();
+            SoftwareContainer softwareContainer = ((IEngineeringServiceProvider)deviceItem).GetService<SoftwareContainer>();
+            PlcSoftware software = softwareContainer.Software as PlcSoftware;
+
+            // get the string repr of the software
+            // string softwareString = software.ToString();
+
+            ICompilable compileService = software.GetService<ICompilable>();
+            CompilerResult result = compileService.Compile();
+
+            return $"Compiled: {result}";
+
+            // return _returnStringWhenSuccess;
         }
 
         public string SetTargetNetId(string amsNetId, string defaultAmsNetId)
@@ -194,6 +258,32 @@ namespace TiaAutomation.Core
             //{
             //    _sysManager.SetTargetNetId(defaultAmsNetId);
             //}
+
+            // get first profinet interface
+            DeviceItem plcProfinet = deviceItem.DeviceItems.First();
+            NetworkInterface plcNetInterface = ((IEngineeringServiceProvider)plcProfinet).GetService<NetworkInterface>();
+
+            if (plcNetInterface != null)
+            {
+                foreach (Node node in plcNetInterface.Nodes)
+                {
+                    Console.WriteLine(node.Name);
+
+                    if (node != null)
+                    {
+                        foreach (EngineeringAttributeInfo nodeInfo in node.GetAttributeInfos())
+                        {
+                            Console.WriteLine(nodeInfo.Name);
+
+                            if (nodeInfo != null && nodeInfo.Name == "Address")
+                            {
+                                node.SetAttribute("Address", "192.168.11.11");
+                            }
+                        }
+                    }
+                }
+            }
+
             return _returnStringWhenSuccess;
         }
 
@@ -207,6 +297,7 @@ namespace TiaAutomation.Core
             //{
             //    return $"Error in ActivateConfiguration: {e}";
             //}
+
             return _returnStringWhenSuccess;
         }
 
@@ -363,6 +454,9 @@ namespace TiaAutomation.Core
             //{
             //    return $"Error in CloseSolution: {e}";
             //}
+
+            currentProject.Close();
+            
             return _returnStringWhenSuccess;
         }
 
@@ -376,6 +470,28 @@ namespace TiaAutomation.Core
             //{
             //    return $"Error in KillInstance: {e}";
             //}
+
+            // -------------------
+
+            if (openedWithInterface)
+            {
+                // Get the process name without the path.
+                string tiaExeName = System.IO.Path.GetFileNameWithoutExtension(locationOfTiaExe);
+
+                // Find the TIA Portal process by its name.
+                Process[] processes = Process.GetProcessesByName(tiaExeName);
+
+                // Terminate all instances of the TIA Portal process.
+                foreach (Process process in processes)
+                {
+                    process.Kill();
+                }
+            }
+            else    // if without interface
+            {
+                instTIA.Dispose();
+            }
+
             return _returnStringWhenSuccess;
         }
 

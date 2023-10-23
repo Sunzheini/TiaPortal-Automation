@@ -22,6 +22,9 @@ using TiaAutomation.IO.Contracts;
 
 /*
     Dependencies: ???
+
+    call for visual studio cyberark rules! Couldn't save the `Yes To All` dialog otherwise!
+        there should be a popup in lower right that it launches with elevated priviliges!
  */
 
 namespace TiaAutomation
@@ -74,6 +77,13 @@ namespace TiaAutomation
         public void button1_Click(object sender, RoutedEventArgs e)
         {
             _resultStringFromEngine = this.engine.Start();
+            writer.Write(label1, _resultStringFromEngine);
+        }
+
+        // TempButtonUntilDecurityIssueIsFixed
+        public void tempButton_Click(object sender, RoutedEventArgs e)
+        {
+            _resultStringFromEngine = this.engine.TempMethod();
             writer.Write(label1, _resultStringFromEngine);
         }
 
