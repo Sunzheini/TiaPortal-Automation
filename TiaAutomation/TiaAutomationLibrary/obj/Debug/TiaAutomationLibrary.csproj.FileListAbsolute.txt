@@ -1,0 +1,14 @@
+C:\Appl\Projects\C#\TiaAutomation\TiaAutomationLibrary\bin\Debug\TiaAutomationLibrary.dll
+C:\Appl\Projects\C#\TiaAutomation\TiaAutomationLibrary\bin\Debug\TiaAutomationLibrary.pdb
+C:\Appl\Projects\C#\TiaAutomation\TiaAutomationLibrary\bin\Debug\TiaAutomation.exe
+C:\Appl\Projects\C#\TiaAutomation\TiaAutomationLibrary\bin\Debug\Siemens.Engineering.dll
+C:\Appl\Projects\C#\TiaAutomation\TiaAutomationLibrary\bin\Debug\Siemens.Engineering.Hmi.dll
+C:\Appl\Projects\C#\TiaAutomation\TiaAutomationLibrary\bin\Debug\TiaAutomation.pdb
+C:\Appl\Projects\C#\TiaAutomation\TiaAutomationLibrary\bin\Debug\TiaAutomation.exe.config
+C:\Appl\Projects\C#\TiaAutomation\TiaAutomationLibrary\bin\Debug\Siemens.Engineering.xml
+C:\Appl\Projects\C#\TiaAutomation\TiaAutomationLibrary\bin\Debug\Siemens.Engineering.Hmi.xml
+C:\Appl\Projects\C#\TiaAutomation\TiaAutomationLibrary\obj\Debug\TiaAutomationLibrary.csproj.AssemblyReference.cache
+C:\Appl\Projects\C#\TiaAutomation\TiaAutomationLibrary\obj\Debug\TiaAutomationLibrary.csproj.CoreCompileInputs.cache
+C:\Appl\Projects\C#\TiaAutomation\TiaAutomationLibrary\obj\Debug\TiaAutomationLibrary.csproj.CopyComplete
+C:\Appl\Projects\C#\TiaAutomation\TiaAutomationLibrary\obj\Debug\TiaAutomationLibrary.dll
+C:\Appl\Projects\C#\TiaAutomation\TiaAutomationLibrary\obj\Debug\TiaAutomationLibrary.pdb

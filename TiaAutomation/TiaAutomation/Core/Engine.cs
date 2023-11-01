@@ -9,7 +9,6 @@ using TiaAutomation.IO.Contracts;
 using System.Runtime.Remoting.Messaging;
 using TiaAutomation.Core;
 
-
 namespace TiaAutomation.Core
 {
     public class Engine : IEngine

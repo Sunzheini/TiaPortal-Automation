@@ -1,7 +1,9 @@
 ﻿using Microsoft.Win32;
 using Siemens.Engineering;
 using Siemens.Engineering.Compiler;
+using Siemens.Engineering.Connection;
 using Siemens.Engineering.Download;
+using Siemens.Engineering.Download.Configurations;
 using Siemens.Engineering.HW;
 using Siemens.Engineering.HW.Features;
 using Siemens.Engineering.SW;
@@ -11,13 +13,21 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Security;
 using System.Security.AccessControl;
 using System.Security.Cryptography;
+using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
 using TiaAutomation.Core.Contracts;
 using TiaAutomation.IO.Contracts;
 using TiaTest;
+
+using Sharp7;
+using static Sharp7.S7Client;
+using static Sharp7.S7;
+using Siemens.Engineering.Online;
 
 namespace TiaAutomation.Core
 {
@@ -287,6 +297,152 @@ namespace TiaAutomation.Core
             return _returnStringWhenSuccess;
         }
 
+        // --------------------------------------------------------------------------------------------------
+        // copied
+        // --------------------------------------------------------------------------------------------------
+        /// <summary>
+        /// Downloads the TIA Portal project on the plc
+        /// </summary>
+        /// <param name="device">PLC device</param>
+        /// <param name="configurationTargetInterface">Configuration of the plc interface</param>
+        private static void Download(Device device, ConfigurationTargetInterface configurationTargetInterface)
+        {
+            DownloadConfigurationDelegate preDownloadDelegate = PreConfigureDownload;
+            DownloadConfigurationDelegate postDownloadDelegate = PostConfigureDownload;
+            DownloadProvider downloadProvider = null;
+
+            foreach (var item in device.DeviceItems[0].DeviceItems)
+            {
+                downloadProvider = item.GetService<DownloadProvider>();
+                {
+                    if (downloadProvider != null)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            downloadProvider.Configuration.ApplyConfiguration(configurationTargetInterface);
+            IConfiguration configuration = configurationTargetInterface;
+            downloadProvider.Download(configuration, preDownloadDelegate, postDownloadDelegate, DownloadOptions.Hardware | DownloadOptions.Software);
+        }
+
+        /// <summary>
+        /// Configurates the download before the download starts
+        /// </summary>
+        /// <param name="downloadConfiguration">Configuration of the download</param>
+        private static void PreConfigureDownload(DownloadConfiguration downloadConfiguration)
+        {
+            StopModules stopModules = downloadConfiguration as StopModules;
+            if (stopModules != null)
+            {
+                stopModules.CurrentSelection = StopModulesSelections.StopAll; // This selection will set PLC into "Stop" mode
+                return;
+            }
+
+            OverwriteSystemData overwriteSystemData = downloadConfiguration as OverwriteSystemData;
+            if (overwriteSystemData != null)
+            {
+                overwriteSystemData.CurrentSelection = OverwriteSystemDataSelections.Overwrite;
+                return;
+            }
+
+            ActiveTestCanBeAborted activeTestCanBeAborted = downloadConfiguration as ActiveTestCanBeAborted;
+            if (activeTestCanBeAborted != null)
+            {
+                activeTestCanBeAborted.CurrentSelection = ActiveTestCanBeAbortedSelections.AcceptAll;
+                return;
+            }
+
+            AlarmTextLibrariesDownload alarmTextLibraries = downloadConfiguration as AlarmTextLibrariesDownload;
+
+            if (alarmTextLibraries != null)
+            {
+                alarmTextLibraries.CurrentSelection = AlarmTextLibrariesDownloadSelections.ConsistentDownload;
+                return;
+            }
+
+            BlockBindingPassword blockBindingPassword = downloadConfiguration as BlockBindingPassword;
+
+            if (blockBindingPassword != null)
+            {
+                SecureString password = null; // Get Binding password from a secure location
+                blockBindingPassword.SetPassword(password);
+                return;
+            }
+            CheckBeforeDownload checkBeforeDownload = downloadConfiguration as CheckBeforeDownload;
+
+            if (checkBeforeDownload != null)
+            {
+                checkBeforeDownload.Checked = true;
+                return;
+            }
+
+            ConsistentBlocksDownload consistentBlocksDownload = downloadConfiguration as ConsistentBlocksDownload;
+
+            if (consistentBlocksDownload != null)
+            {
+                consistentBlocksDownload.CurrentSelection = ConsistentBlocksDownloadSelections.ConsistentDownload;
+                return;
+            }
+
+            ModuleWriteAccessPassword moduleWriteAccessPassword = downloadConfiguration as ModuleWriteAccessPassword;
+
+            if (moduleWriteAccessPassword != null)
+            {
+                SecureString password = null; // Get PLC protection level password from a secure location
+
+                moduleWriteAccessPassword.SetPassword(password);
+                return;
+            }
+            throw new NotSupportedException(); // Exception thrown in the delagate will cancel download
+        }
+
+        /// <summary>
+        /// Configurates the download after the download finished
+        /// </summary>
+        /// <param name="downloadConfiguration">Configuration of the download</param>
+        private static void PostConfigureDownload(DownloadConfiguration downloadConfiguration)
+        {
+            StartModules startModules = downloadConfiguration as StartModules;
+            if (startModules != null)
+            {
+                startModules.CurrentSelection = StartModulesSelections.StartModule;
+                return;
+            }
+        }
+
+        /// <summary>
+        /// Writes the result of the download process in the command line
+        /// </summary>
+        /// <param name="result">Result of the download process</param>
+        private static void WriteDownloadResults(DownloadResult result)
+        {
+            Console.WriteLine("State:" + result.State);
+            Console.WriteLine("Warning Count:" + result.WarningCount);
+            Console.WriteLine("Error Count:" + result.ErrorCount);
+            RecursivelyWriteMessages(result.Messages);
+        }
+
+        /// <summary>
+        /// Writes all results of the download process in the command line
+        /// </summary>
+        /// <param name="messages">Result messages of the download process</param>
+        /// <param name="indent">Indent settings</param>
+        private static void RecursivelyWriteMessages(DownloadResultMessageComposition messages,
+        string indent = "")
+        {
+            indent += "\t";
+            foreach (DownloadResultMessage message in messages)
+            {
+                Console.WriteLine(indent + "DateTime: " + message.DateTime);
+                Console.WriteLine(indent + "State: " + message.State);
+                Console.WriteLine(indent + "Message: " + message.Message);
+                RecursivelyWriteMessages(message.Messages, indent);
+            }
+        }
+
+        // --------------------------------------------------------------------------------------------------
         public string ActivateConfiguration()
         {
             //try
@@ -297,6 +453,30 @@ namespace TiaAutomation.Core
             //{
             //    return $"Error in ActivateConfiguration: {e}";
             //}
+            // page 482
+            const string networkAdapter = @"ASIX AX88179 USB 3.0 to Gigabit Ethernet Adapter";
+            const string configurationMode = @"PN/IE";
+
+            DownloadProvider downloadProvider = deviceItem.GetService<DownloadProvider>();
+            ConnectionConfiguration configuration = downloadProvider.Configuration;
+            ConfigurationMode mode = configuration.Modes.Find(configurationMode);
+            ConfigurationPcInterface pcInterface = mode.PcInterfaces.Find(networkAdapter, 1);
+
+            IConfiguration targetConfiguration = pcInterface.TargetInterfaces[0];
+
+            DownloadConfigurationDelegate preDownloadDelegate = PreConfigureDownload;
+            DownloadConfigurationDelegate postDownloadDelegate = PostConfigureDownload;
+
+            try
+            {
+                DownloadResult result = downloadProvider.Download(targetConfiguration, preDownloadDelegate, postDownloadDelegate, DownloadOptions.Hardware | DownloadOptions.Software);
+                // DownloadResult result = downloadProvider.Download(targetConfiguration, preDownloadDelegate, postDownloadDelegate, DownloadOptions.Software);
+                return $"Download result: {result}";
+            }
+            catch (Exception e)
+            {
+                return $"{e}";
+            }
 
             return _returnStringWhenSuccess;
         }
@@ -311,6 +491,98 @@ namespace TiaAutomation.Core
             //{
             //    return $"Error in StartRestartTwinCAT: {e}";
             //}
+
+            // ----------------------------------------------------
+            // Sharp7
+            // ----------------------------------------------------
+            string ipAddress = "192.168.2.12";
+
+            var client = new S7Client();
+
+            // public int ConnectTo(String Address, int Rack, int Slot)
+            // try 0, 0 or 0, 1
+            int connectionResult = client.ConnectTo(ipAddress, 0, 0);
+
+            // 0 : The Client is successfully connected (or was already connected).
+            if (connectionResult == 0)
+            {
+                // start the plc (also has PlcHotStart)
+                var resultFromStart = client.PlcColdStart();
+
+                //check if started
+                if (resultFromStart == 0)
+                {
+                    // wait for 10 seconds
+                    System.Threading.Thread.Sleep(10000);
+
+                    // stop the plc
+                    var resultFromStop = client.PlcStop();
+
+                    // check if stopped
+                    if (resultFromStop == 0)
+                    {
+                        // disconnect from plc
+                        client.Disconnect();
+                    }
+                    else
+                    {
+                        return "Error while stopping PLC";
+                    }
+                }
+                else
+                {
+                    return "Error while starting PLC";
+                }
+            }
+            else
+            {
+                return "Error while connecting to PLC";
+            }
+
+            // ----------------------------------------------------
+            // Openness
+            // ----------------------------------------------------
+
+            return _returnStringWhenSuccess;
+        }
+
+        public string GetCpuInfo(S7Client client)
+        {
+            var cpuInfo = new S7CpuInfo();
+            int cpuStatus = 0;
+
+            client.GetCpuInfo(ref cpuInfo);
+            Console.WriteLine("##################################");
+            Console.WriteLine("#############CPU-Info#############");
+            Console.WriteLine("##################################");
+            Console.WriteLine("Module Name: " + cpuInfo.ModuleName);
+            Console.WriteLine("AS Name: " + cpuInfo.ASName);
+            Console.WriteLine("Module Type Name: " + cpuInfo.ModuleTypeName);
+            Console.WriteLine("Serialnumber: " + cpuInfo.SerialNumber);
+            Console.WriteLine("##################################");
+
+            client.PlcGetStatus(ref cpuStatus);
+            Console.WriteLine("############CPU-Status############");
+            Console.WriteLine("##################################");
+            Console.WriteLine("Status: " + cpuStatus);
+
+            return _returnStringWhenSuccess;
+        }
+
+        public string GoOnline()
+        {
+            const string networkAdapter = @"ASIX AX88179 USB 3.0 to Gigabit Ethernet Adapter";
+            const string configurationMode = @"PN/IE";
+            const string slotString = @"2 X3";
+
+            OnlineProvider onlineProvider = deviceItem.GetService<OnlineProvider>();
+            ConnectionConfiguration configuration = onlineProvider.Configuration;
+            ConfigurationMode mode = configuration.Modes.Find(configurationMode);
+            ConfigurationPcInterface pcInterface = mode.PcInterfaces.Find(networkAdapter, 1);
+            ConfigurationTargetInterface slot = pcInterface.TargetInterfaces.Find(slotString);
+            configuration.ApplyConfiguration(slot);
+            onlineProvider.GoOnline();
+
             return _returnStringWhenSuccess;
         }
 

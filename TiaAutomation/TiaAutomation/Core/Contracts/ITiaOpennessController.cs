@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Sharp7;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -25,6 +26,10 @@ namespace TiaAutomation.Core.Contracts
         string ActivateConfiguration();
 
         string StartRestartTiaPortal();
+
+        string GetCpuInfo(S7Client client);
+
+        string GoOnline();
 
         string ReadFromPlc(string nameOfIntVarToRead, string defaultNameOfIntVarToRead);
 
